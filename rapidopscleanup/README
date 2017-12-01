@@ -1,0 +1,24 @@
+###############################################################
+###############################################################
+#	CLEAN-UP of the project already run                   #
+#  Following are the files in rapidops demo cleanup project   #
+#  1. clean_git.py 					      #
+#  2. create_petclinic_project.sh			      #
+#  3. db_cleanup.sql					      #
+#  4. delete_app.py					      #
+###############################################################
+###############################################################
+
+# stages of cleanup
+1. Cleanup Database
+2. Delete all the instances from CMP(calm.io)
+3. GIT changes(gitlab):
+	a. Delete the branches that were committed 
+		during the demo
+        b. Create a new project on gitlab
+	c. Delete from local machine(250) and Clone from 
+		the backup gitlab project into local machine(250)
+	d. Change the remote url to prioject created in step b
+		 and push all the files into the gitlab project.
+
+
