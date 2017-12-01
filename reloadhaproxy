@@ -1,0 +1,3 @@
+/bin/haproxy-marathon-bridge 10.207.231.231:8080 > /etc/haproxy/haproxy.cfg
+haproxy -f /etc/haproxy/haproxy.cfg -p /var/run/haproxy.pid -sf $(cat /var/run/haproxy.pid)
+#systemctl restart haproxy

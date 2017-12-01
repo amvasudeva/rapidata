@@ -1,0 +1,9 @@
+[user]
+	name = Pravash
+	email = pravash.choubey@wipro.com
+[core]
+	editor = vi
+[push]
+	default = matching
+[credential]
+	helper = store
