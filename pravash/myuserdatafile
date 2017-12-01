@@ -1,0 +1,8 @@
+#cloud-config
+hostname: webserver
+runcmd:
+- sudo curl -k https://puppet-master:8140/packages/current/install.bash | sudo bash 
+- sudo --  sed -i '10i \    \environment=feature' /etc/puppetlabs/puppet/puppet.conf
+- sudo puppet agent -t
+- exit 0
+

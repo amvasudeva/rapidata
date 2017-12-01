@@ -1,0 +1,6 @@
+#cloud-config
+runcmd:
+- [ sudo /usr/bin/yum install -y git ]
+- [ sudo /usr/bin/yum install -y wget  ]
+- exit 0
+

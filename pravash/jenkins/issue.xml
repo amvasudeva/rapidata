@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<issue>
+  <subject>Jenkins Build Status: Failed</subject>
+  <project_id>2</project_id>
+  <tracker_id>1</tracker_id>
+  <status_id>1</status_id>
+  <priority_id>1</priority_id>
+  <custom_fields type="array">
+    <custom_field>
+      <id>2</id>
+      <value>Fixed</value>
+    </custom_field>
+    <custom_field>
+      <id>1</id>
+      <value>0.8.2</value>
+    </custom_field>
+  </custom_fields>
+</issue>
+

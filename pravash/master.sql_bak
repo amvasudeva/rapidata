@@ -1,0 +1,15 @@
+--liquibase formatted sql
+
+--changeset nvoxland:1
+create table test2 (
+    id int primary key,
+    name varchar(255)
+);
+--rollback drop table test2;
+
+--changeset nvoxland:2
+insert into test2 (id, name) values (3, "name 3");
+insert into test2 (id, name) values (4, "name 4");
+
+--changeset nvoxland:3 dbms:mysql
+create sequence seq_test;

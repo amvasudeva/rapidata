@@ -1,0 +1,134 @@
+<!--
+
+    THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS
+    FOR A PARTICULAR PURPOSE. THIS CODE AND INFORMATION ARE NOT SUPPORTED BY XEBIALABS.
+
+-->
+<synthetic xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns="http://www.xebialabs.com/deployit/synthetic"
+           xsi:schemaLocation="http://www.xebialabs.com/deployit/synthetic synthetic.xsd">
+
+    <!-- OpenShift v3 -->
+    <!-- v3 container -->
+    <type type="openshift.Server" extends="udm.BaseContainer">
+        <property name="host" kind="ci" referenced-type="overthere.Host" as-containment="true" description="The host where the oc client is installed on."/>
+        <property name="serverUrl" required="true"/>
+
+        <!-- client -->
+        <property name="ocHome" required="true" description="Location where the oc client can be found." category="client"/>
+        <property name="installClient" required="false" kind="boolean" description="If true, the oc client will be downloaded, and placed under ocHome." category="client"/>
+        <property name="ocUrl" required="true" default="https://github.com/openshift/origin/releases/download/v1.3.2/openshift-origin-client-tools-v1.3.2-ac1d579-linux-64bit.tar.gz" description="Download url to get oc client" hidden="false" category="client"/>
+        <property name="skipTLS" required="false" default="true" kind="boolean" category="client" description="Set to true if you want to skip TLS verification" />
+        <property name="zipUrl" required="true" default="http://www.7-zip.org/a/7z1604-x64.exe" hidden="true" category="client" />
+        <property name="wgetExecutable" hidden="true" default="openshift\runtime\wget.exe" category="client"/>
+
+        <!-- security -->
+        <property name="authentication" kind="enum" required="true" description="Define which authentication should be used" category="security">
+            <enum-values>
+                <value>Basic</value>
+                <value>Token</value>
+                <value>Basic Alias</value>
+                <value>Token Alias</value>
+            </enum-values>
+        </property>
+        <property name="username" required="false" category="security"/>
+        <property name="password" required="false" password="true" category="security"/>
+        <property name="openshiftToken" required="false" password="true" category="security"/>
+        <property name="credential" kind="ci" required="false" referenced-type="openshift.Credential" category="security"/>
+        <method   name="check"
+                  delegate="shellScript"
+                  host="${thisCi.host}"
+                  script="openshift/checkOC" />
+    </type>
+    <type type="openshift.Project" extends="udm.BaseContainer">
+        <property name="server" kind="ci" referenced-type="openshift.Server" as-containment="true" description="The openshift server this project is part of."/>
+        <property name="projectName" required="true"/>
+        <property name="description" required="false"/>
+        <property name="projectDisplayName" required="false"/>
+        <method   name="showResource"
+                  delegate="shellScript"
+                  host="${thisCi.server.host}"
+                  script="openshift/showResourceStatus" >
+        </method>
+    </type>
+
+    <!-- v3 deployables / provisionables -->
+    <!-- v3 project -->
+    <type type="openshift.ProjectModule" extends="udm.BaseProvisioned" deployable-type="openshift.ProjectSpec" container-type="openshift.Server" description="OpenShift Project.">
+        <generate-deployable type="openshift.ProjectSpec" extends="udm.BaseProvisionable" copy-default-values="true" description="Specification for an OpenShift project."/>
+        <property name="projectName" required="true"/>
+        <property name="description" required="false"/>
+        <property name="projectDisplayName" required="false"/>
+    </type>
+
+    <!-- v3 app -->
+    <type type="openshift.AppModule" extends="udm.BaseDeployed" deployable-type="openshift.App"
+          container-type="openshift.Project" description="OpenShift App">
+        <generate-deployable type="openshift.App" extends="udm.BaseDeployable"/>
+        <property name="appName" required="true"/>
+        <property name="blueGreen" kind="boolean" required="false" default="false" description="If selected, an update operation will be performed in a blue green deployment." />
+
+        <property name="dockerUrl" required="false" label="Docker Url" category="Docker" description="Docker base url to be used."/>
+        <property name="dockerOrganization" required="false" label="Docker Organization" category="Docker" description="Docker organization name."/>
+        <property name="dockerName" required="false" label="Docker Image Name" category="Docker" description="Docker image name."/>
+        <property name="dockerTag" required="false" label="Docker Image Tag" category="Docker" description="Docker image tag."/>
+    </type>
+
+    <type type="openshift.DockerPushAppModule" extends="udm.BaseDeployed" deployable-type="openshift.DockerPushApp"
+          container-type="openshift.Project" description="OpenShift Docker Push App">
+        <generate-deployable type="openshift.DockerPushApp" extends="udm.BaseDeployable"/>
+        <property name="appName" required="true"/>
+        <property name="blueGreen" kind="boolean" required="false" default="false" description="If selected, an update operation will be performed in a blue green deployment." />
+
+
+        <property name="dockerUrl" required="false" label="Docker Url" category="Docker" description="Docker base url to be used."/>
+        <property name="dockerOrganization" required="false" label="Docker Organization" category="Docker" description="Docker organization name."/>
+        <property name="dockerName" required="false" label="Docker Image Name" category="Docker" description="Docker image name."/>
+        <property name="dockerTag" required="false" label="Docker Image Tag" category="Docker" description="Docker image tag."/>
+
+        <property name="pullDockerUrl" required="false" label="Pull Docker Url" category="Docker" description="Docker base url to do a 'docker pull' from."/>
+        <property name="pullDockerOrganization" required="true" label="Pull Docker Organization" category="Docker" description="Docker organization name to pull."/>
+        <property name="pullDockerName" required="true" label="Pull Docker Image Name" category="Docker" description="Docker image name to pull."/>
+        <property name="pullDockerTag" required="false" label="Pull Docker Image Tag" category="Docker" description="Docker image tag to pull."/>
+    </type>
+
+    <type type="openshift.BinaryAppModule" extends="udm.BaseDeployedArtifact" deployable-type="openshift.BinaryApp"
+          container-type="openshift.Project" description="OpenShift Binary App">
+        <generate-deployable type="openshift.BinaryApp" extends="udm.BaseDeployableArtifact"/>
+        <property name="appName" required="true"/>
+        <property name="imageStream" required="true" label="Image Stream" description="Name of an image stream to to use as a builder."/>
+    </type>
+
+    <!-- Allows uploading a Dockerfile as source -->
+    <type type="openshift.DockerfileAppModule" extends="udm.BaseDeployedArtifact" deployable-type="openshift.DockerfileApp"
+          container-type="openshift.Project" description="OpenShift Dockerfile App">
+        <generate-deployable type="openshift.DockerfileApp" extends="udm.BaseDeployableArtifact"/>
+        <property name="appName" required="true"/>
+    </type>
+
+    <type type="openshift.ResourceModule" extends="udm.BaseDeployedArtifact" deployable-type="openshift.Resource"
+          container-type="openshift.Project" description="OpenShift Resource">
+        <generate-deployable type="openshift.Resource" extends="udm.BaseDeployableArtifact"/>
+    </type>
+
+    <type-modification type="openshift.Resource">
+        <property name="textFileNamesRegex" hidden="true" default=".+\.(cfg | conf | config | ini | properties | props | txt | asp | aspx | htm | html | jsf | jsp | xht | xhtml | sql | xml | xsd | xsl | xslt | json | yml | yaml )" />
+    </type-modification>
+
+    <!-- OpenShift v2 -->
+    <!-- v2 container -->
+    <type type="rh.OpenShiftClient" extends="udm.BaseContainer">
+        <property name="host" kind="ci" referenced-type="overthere.Host" as-containment="true"/>
+        <property name="username"/>
+        <property name="password" password="true"/>
+    </type>
+
+    <!-- v2 deployables -->
+    <type type="rh.TomcatWARModule" extends="udm.BaseDeployedArtifact" deployable-type="rh.TomcatWAR"
+          container-type="rh.OpenShiftClient" description="Tomcat WAR for OpenShift gear">
+        <generate-deployable type="rh.TomcatWAR" extends="udm.BaseDeployableFileArtifact"/>
+        <property name="appName" required="true"/>
+    </type>
+
+</synthetic>

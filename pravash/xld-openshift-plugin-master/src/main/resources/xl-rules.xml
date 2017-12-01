@@ -1,0 +1,270 @@
+<!--
+
+    THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS
+    FOR A PARTICULAR PURPOSE. THIS CODE AND INFORMATION ARE NOT SUPPORTED BY XEBIALABS.
+
+-->
+
+<rules xmlns="http://www.xebialabs.com/xl-deploy/xl-rules">
+
+    <rule name="openshift.ProjectModule.CREATE_MODIFY" scope="deployed">
+        <conditions>
+            <type>openshift.ProjectModule</type>
+            <operation>CREATE</operation>
+            <operation>MODIFY</operation>
+        </conditions>
+        <steps>
+            <os-script>
+                <script>openshift/deploy-project-module</script>
+                <order>60</order>
+            </os-script>
+        </steps>
+    </rule>
+
+    <rule name="openshift.ProjectModule.DESTROY" scope="deployed">
+        <conditions>
+            <type>openshift.ProjectModule</type>
+            <operation>DESTROY</operation>
+            <operation>MODIFY</operation>
+        </conditions>
+        <steps>
+            <os-script>
+                <script>openshift/undeploy-project-module</script>
+                <order>61</order>
+            </os-script>
+        </steps>
+    </rule>
+
+    <rule name="openshift.AppModule.CREATE" scope="deployed">
+        <conditions>
+            <type>openshift.AppModule</type>
+            <type>openshift.DockerPushAppModule</type>
+            <operation>CREATE</operation>
+        </conditions>
+        <steps>
+            <os-script>
+                <script>openshift/deploy-app-module</script>
+                <description expression="true">"Create application [%s] on project [%s]" % (deployed.appName, deployed.container.projectName)</description>
+                <order>61</order>
+                <target-host expression="true">deployed.container.server.host</target-host>
+            </os-script>
+            <os-script>
+                <script>openshift/expose-service</script>
+                <description expression="true">"Exposing services for application [%s] on project [%s]" % (deployed.appName, deployed.container.projectName)</description>
+                <order>62</order>
+                <target-host expression="true">deployed.container.server.host</target-host>
+                <freemarker-context>
+                    <appName expression="true">"%s-blue" % deployed.appName if deployed.blueGreen else deployed.appName</appName>
+                </freemarker-context>
+            </os-script>
+        </steps>
+    </rule>
+
+    <rule name="openshift.AppModule.DESTROY" scope="deployed">
+        <conditions>
+            <type>openshift.AppModule</type>
+            <type>openshift.DockerPushAppModule</type>
+            <operation>DESTROY</operation>
+        </conditions>
+        <steps>
+            <os-script>
+                <script>openshift/undeploy-app-module</script>
+                <description expression="true">"Remove application [%s] from project [%s]" % (previousDeployed.appName, previousDeployed.container.projectName)</description>
+                <order>40</order>
+                <target-host expression="true">previousDeployed.container.server.host</target-host>
+            </os-script>
+        </steps>
+    </rule>
+
+    <rule name="openshift.AppModule.MODIFY_not_blue_green" scope="deployed">
+        <conditions>
+            <type>openshift.AppModule</type>
+            <operation>MODIFY</operation>
+            <expression>not deployed.blueGreen</expression>
+        </conditions>
+        <steps>
+            <os-script>
+                <script>openshift/undeploy-app-module</script>
+                <description expression="true">"Remove application [%s] from project [%s]" % (previousDeployed.appName, previousDeployed.container.projectName)</description>
+                <order>40</order>
+                <target-host expression="true">previousDeployed.container.server.host</target-host>
+            </os-script>
+            <os-script>
+                <script>openshift/deploy-app-module</script>
+                <description expression="true">"Create application [%s] on project [%s]" % (deployed.appName, deployed.container.projectName)</description>
+                <order>61</order>
+                <target-host expression="true">deployed.container.server.host</target-host>
+            </os-script>
+            <os-script>
+                <script>openshift/expose-service</script>
+                <description expression="true">"Exposing services for application [%s] on project [%s]" % (deployed.appName, deployed.container.projectName)</description>
+                <order>62</order>
+                <target-host expression="true">deployed.container.server.host</target-host>
+                <freemarker-context>
+                    <appName expression="true">deployed.appName</appName>
+                </freemarker-context>
+            </os-script>
+        </steps>
+    </rule>
+
+    <rule name="openshift.AppModule.MODIFY_blue_green" scope="deployed">
+        <conditions>
+            <type>openshift.AppModule</type>
+            <operation>MODIFY</operation>
+            <expression>deployed.blueGreen</expression>
+        </conditions>
+        <steps>
+            <os-script>
+                <script>openshift/deploy-app-module</script>
+                <description expression="true">"Create application [%s_new] on project [%s]" % (deployed.appName, deployed.container.projectName)</description>
+                <order>61</order>
+                <target-host expression="true">deployed.container.server.host</target-host>
+            </os-script>
+            <os-script>
+                <script>openshift/change-route</script>
+                <description expression="true">"Changing routing from application [%s] to application [%s_new] on project [%s]" % (deployed.appName, deployed.appName, deployed.container.projectName)</description>
+                <order>62</order>
+                <target-host expression="true">deployed.container.server.host</target-host>
+            </os-script>
+            <os-script>
+                <script>openshift/undeploy-app-module</script>
+                <description expression="true">"Remove application [%s_old] from project [%s]" % (previousDeployed.appName, previousDeployed.container.projectName)</description>
+                <order>63</order>
+                <target-host expression="true">previousDeployed.container.server.host</target-host>
+                <freemarker-context>
+                    <operation>modify</operation>
+                </freemarker-context>
+            </os-script>
+        </steps>
+    </rule>
+
+    <rule name="openshift.DockerPushAppModule.push-pull.CREATE" scope="deployed">
+        <conditions>
+            <type>openshift.DockerPushAppModule</type>
+            <operation>CREATE</operation>
+            <operation>MODIFY</operation>
+        </conditions>
+        <steps>
+            <os-script>
+                <script>openshift/docker-pull-tag-push</script>
+                <description expression="true">"Pulling [%s]:[%s] from the Registry and pushing to OpenShift" % (deployed.pullDockerName, deployed.pullDockerTag)</description>
+                <order>60</order>
+                <target-host expression="true">deployed.container.server.host</target-host>
+            </os-script>
+
+            <wait>
+                <order>65</order>
+                <description>Pause to let the change image trigger the deployment</description>
+                <seconds>10</seconds>
+            </wait>
+
+            <os-script>
+                <script>openshift/verify-deployment</script>
+                <description expression="true">"Verifying Rolling Deployment of [%s]" % (deployed.appName)</description>
+                <order>66</order>
+                <target-host expression="true">deployed.container.server.host</target-host>
+            </os-script>
+        </steps>
+    </rule>
+
+    <rule name="openshift.BinaryAppModule.CREATE_MODIFY" scope="deployed">
+        <conditions>
+            <type>openshift.BinaryAppModule</type>
+            <operation>CREATE</operation>
+            <operation>MODIFY</operation>
+        </conditions>
+        <steps>
+            <os-script>
+                <script>openshift/deploy-binary-app-module</script>
+                <order>61</order>
+                <target-host expression="true">deployed.container.server.host</target-host>
+            </os-script>
+        </steps>
+    </rule>
+
+    <rule name="openshift.DockerfileAppModule.CREATE_MODIFY" scope="deployed">
+        <conditions>
+            <type>openshift.DockerfileAppModule</type>
+            <operation>CREATE</operation>
+            <operation>MODIFY</operation>
+        </conditions>
+        <steps>
+            <os-script>
+                <script>openshift/deploy-dockerfile-app-module</script>
+                <order>61</order>
+                <target-host expression="true">deployed.container.server.host</target-host>
+            </os-script>
+        </steps>
+    </rule>
+
+    <rule name="openshift.SourceAppModule.DESTROY" scope="deployed">
+        <conditions>
+            <type>openshift.BinaryAppModule</type>
+            <type>openshift.DockerfileAppModule</type>
+            <operation>DESTROY</operation>
+            <operation>MODIFY</operation>
+        </conditions>
+        <steps>
+            <os-script>
+                <script>openshift/undeploy-app-module</script>
+                <order>60</order>
+                <target-host expression="true">previousDeployed.container.server.host</target-host>
+            </os-script>
+        </steps>
+    </rule>
+
+    <rule name="openshift.ResourceModule.CREATE" scope="deployed">
+        <conditions>
+            <type>openshift.ResourceModule</type>
+            <operation>CREATE</operation>
+            <operation>MODIFY</operation>
+        </conditions>
+        <steps>
+            <os-script>
+                <script>openshift/deploy-resource-module</script>
+                <description expression="true">"Create resource [%s] on project [%s]" % (deployed.name, deployed.container.name)</description>
+                <order>70</order>
+                <target-host expression="true">deployed.container.server.host</target-host>
+            </os-script>
+        </steps>
+    </rule>
+
+    <rule name="openshift.ResourceModule.DESTROY" scope="deployed">
+        <conditions>
+            <type>openshift.ResourceModule</type>
+            <operation>DESTROY</operation>
+            <operation>MODIFY</operation>
+        </conditions>
+        <steps>
+            <os-script>
+                <script>openshift/undeploy-resource-module</script>
+                <description expression="true">"Destroy resource [%s] on project [%s]" % (previousDeployed.name, previousDeployed.container.name)</description>
+                <order>40</order>
+                <target-host expression="true">previousDeployed.container.server.host</target-host>
+            </os-script>
+        </steps>
+    </rule>
+
+    <rule name="openshift.Install_Client" scope="plan">
+        <planning-script-path>openshift/install_client.py</planning-script-path>
+    </rule>
+
+    <rule name="rh.TomcatWARModule.CREATE_MODIFY_plan" scope="plan">
+        <planning-script-path>rhc/plan.py</planning-script-path>
+    </rule>
+
+    <rule name="rh.TomcatWARModule.CREATE_MODIFY" scope="deployed">
+        <conditions>
+            <type>rh.TomcatWARModule</type>
+            <operation>CREATE</operation>
+            <operation>MODIFY</operation>
+        </conditions>
+        <steps>
+            <os-script>
+                <script>rhc/stage-artifact</script>
+            </os-script>
+        </steps>
+    </rule>
+
+</rules>

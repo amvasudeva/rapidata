@@ -1,0 +1,1 @@
+nova floating-ip-associate mesos-slave5 10.207.231.253

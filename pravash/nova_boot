@@ -1,0 +1,7 @@
+nova boot --flavor little --image CentOS --nic net-id='229ee4ad-7b9c-4d1b-b88b-276681bfe4ba' --key-name mesos --user-data /root/pravash/myuserdatafile mesos-slave5
+
+d85ffdf1-4000-42ed-bbb9-d5b396df71da
+
+ export OS_AUTH_URL=http://10.207.231.120:35357/v2.0
+
+ nova boot --flavor 3  --image Earth-Centos-Snapshot-1 --nic net-id='d85ffdf1-4000-42ed-bbb9-d5b396df71da' myinstance2 --user-data /root/pravash/myuserdatafile

@@ -1,0 +1,28 @@
+
+file_objectfile_objectexport 10.231.50.50 
+operating system: Windows7
+export OS_PASSWORD=915c41a69c214abe
+export OS_AUTH_URL=http://10.207.231.240:5000/v2.0/
+export OS_USERNAME=admin
+export OS_TENANT_NAME=admin
+
+file_objectfile_objectexport 10.231.50.51 
+operating system: Centos7 
+	export OS_PASSWORD=915c41a69c214abe
+export OS_AUTH_URL=http://10.207.231.240:5000/v2.0/
+export OS_USERNAME=admin
+export OS_TENANT_NAME=admin
+
+file_objectfile_objectexport 10.231.50.52 
+operating system: RHEL7.4 
+	export OS_PASSWORD=915c41a69c214abe
+export OS_AUTH_URL=http://10.207.231.240:5000/v2.0/
+export OS_USERNAME=admin
+export OS_TENANT_NAME=admin
+
+file_objectfile_objectexport 10.231.50.53 
+operating system: Fedora5 
+	export OS_PASSWORD=915c41a69c214abe
+export OS_AUTH_URL=http://10.207.231.240:5000/v2.0/
+export OS_USERNAME=admin
+export OS_TENANT_NAME=admin
